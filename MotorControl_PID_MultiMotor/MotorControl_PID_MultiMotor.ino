@@ -29,7 +29,7 @@ const unsigned long debugInterval = 1000;
 
 volatile long encoderCount[4] = {0, 0, 0, 0};
 float currentRPM[4] = {0.0, 0.0, 0.0, 0.0};
-float targetRPM[4] = {100.0, 100.0, 100.0, 100.0};
+float targetRPM[4] = {50.0, 50.0, 50.0, 50.0};
 float error[4] = {0.0, 0.0, 0.0, 0.0};
 float lastError[4] = {0.0, 0.0, 0.0, 0.0};
 float integral[4] = {0.0, 0.0, 0.0, 0.0};
@@ -96,7 +96,7 @@ void setup() {
 
 void loop() {
   for (int i = 0; i < 4; i++) {
-//    drivePID(i);
+    drivePID(i);
   }
 
   if (millis() - lastDebugTime >= debugInterval) {

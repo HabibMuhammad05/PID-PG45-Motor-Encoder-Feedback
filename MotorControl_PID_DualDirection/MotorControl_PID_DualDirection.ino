@@ -1,7 +1,6 @@
 #define MOTOR_A 49
 #define MOTOR_B 47
 #define MOTOR_PWM 6
-#define MOTOR_PWM2 7
 
 #define ENCA 18
 #define ENCB 22
@@ -32,7 +31,6 @@ void setup() {
   pinMode(MOTOR_A, OUTPUT);
   pinMode(MOTOR_B, OUTPUT);
   pinMode(MOTOR_PWM, OUTPUT);
-  pinMode(MOTOR_PWM2, OUTPUT);
 
   pinMode(ENCA, INPUT_PULLUP);
   pinMode(ENCB, INPUT_PULLUP);
@@ -50,7 +48,7 @@ void loop() {
     waktuNaik = millis();
   }
   targetRPM = target[ind];
-//  drivePID();
+  drivePID();
 }
 
 void drivePID() {
@@ -78,14 +76,12 @@ void drivePID() {
     if (motorPWM > 0) {
       motorPWM = constrain(motorPWM, 0, 50);
       analogWrite(MOTOR_PWM, motorPWM);
-      analogWrite(MOTOR_PWM2, motorPWM);
       digitalWrite(MOTOR_A, HIGH); 
       digitalWrite(MOTOR_B, LOW);
       Serial.println("CW");
     } else {
       motorPWM = constrain(abs(motorPWM), 0, 50);
       analogWrite(MOTOR_PWM, motorPWM);
-      analogWrite(MOTOR_PWM2, motorPWM);
       digitalWrite(MOTOR_A, LOW);
       digitalWrite(MOTOR_B, HIGH);
       Serial.println("CCW");

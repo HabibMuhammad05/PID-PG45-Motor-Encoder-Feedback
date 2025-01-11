@@ -5,7 +5,7 @@
 #define MOTOR_PWM2 7
 
 // Encoder Pins
-#define ENCA 21
+#define ENCA 18
 #define ENCB 22
 
 // Constants
@@ -60,7 +60,7 @@ void loop() {
   }
 
   targetRPM = target[ind];
-//  drivePID();
+  drivePID();
 }
 
 void drivePID(){
