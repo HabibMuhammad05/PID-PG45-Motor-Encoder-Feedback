@@ -1,10 +1,36 @@
+/*---------------------------------------------------------------------------------------------------------*/
+/*--------------------ARDUINO MEGA PG45 MOTOR WITH PID CONTROLLER CLOSED LOOP FEEDBACK---------------------*/
+/*----------------------DUAL DIRECTION WITH MULTIPLE MOTOR CALCULATION CAPABILITIES------------------------*/
+/*------------------------7PPR ENCODER @1:19.2 GEAR RATIO -- BTS7960 MOTOR DRIVER--------------------------*/
+/*---------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------Source Code by LEXARGA-24 TEAM-------------------------------------*/
+/*-----------------------------------Modified & Adapted by LEXARGA-24 TEAM---------------------------------*/
+/*----------------------------------------------------V4.0-------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------*/
+/*------------------------------------LAST UPDATE AT 17:30:00, 14 JAN 25-----------------------------------*/
+
+// Define DEBUG to enable debugging; comment it out to disable
+//#define DEBUG
+
+#ifdef DEBUG
+  #define DEBUG_PRINT(...) Serial.print(__VA_ARGS__)
+  #define DEBUG_PRINTLN(...) Serial.println(__VA_ARGS__)
+  #define DEBUG_BEGIN(baud) Serial.begin(baud)
+#else
+  #define DEBUG_PRINT(...)    
+  #define DEBUG_PRINTLN(...)  
+  #define DEBUG_BEGIN(baud)   
+#endif
+
+
+//======================================= MOTOR DRIVER PINS =======================================//
 #define MOTOR_A_FL 49
 #define MOTOR_B_FL 47
-#define MOTOR_PWM_FL 6
+#define MOTOR_PWM_FL 8
 
 #define MOTOR_A_FR 43
 #define MOTOR_B_FR 45
-#define MOTOR_PWM_FR 7
+#define MOTOR_PWM_FR 9
 
 #define MOTOR_A_RL 41
 #define MOTOR_B_RL 39
@@ -14,49 +40,35 @@
 #define MOTOR_B_RR 37
 #define MOTOR_PWM_RR 5
 
-#define ENCA_FL 18
-#define ENCB_FL 22
-#define ENCA_FR 21
-#define ENCB_FR 24
-#define ENCA_RL 2
-#define ENCB_RL 26
-#define ENCA_RR 3
-#define ENCB_RR 28
 
-const int encoderPPR = 326;
-const unsigned long sampleTime = 50;
-const unsigned long debugInterval = 1000;
+//========================================= ENCODER PINS =========================================//
+#define ENCA_FL 21
+#define ENCB_FL 28
+#define ENCA_FR 20
+#define ENCB_FR 26
+#define ENCA_RL 3
+#define ENCB_RL 24
+#define ENCA_RR 2
+#define ENCB_RR 22
 
-volatile long encoderCount[4] = {0, 0, 0, 0};
-float currentRPM[4] = {0.0, 0.0, 0.0, 0.0};
-float targetRPM[4] = {50.0, 50.0, 50.0, 50.0};
-float error[4] = {0.0, 0.0, 0.0, 0.0};
-float lastError[4] = {0.0, 0.0, 0.0, 0.0};
-float integral[4] = {0.0, 0.0, 0.0, 0.0};
-float Kp = 0.45, Ki = 0.8, Kd = 0.01;
-int motorPWM[4] = {0, 0, 0, 0};
-unsigned long lastTime[4] = {0, 0, 0, 0};
-unsigned long lastDebugTime = 0;
+//================================== PID CALCULATION VARIABLES ===================================//
+uint8_t maxPWM = 200;                         //amount of max PWM sent to motor driver
+    
+const int encoderPPR = 326;                   //PG45 = 17PPR @1:19.2 Ratio = 17x19.2 ~ 326
+const unsigned long sampleTime = 25;          //PID Calculation Interval
+const unsigned long debugInterval = 1000;     //Serial Print Debug interval, avoid excessive RAM&Overflow
 
-void readEncoder_FL() {
-  if (digitalRead(ENCB_FL)) encoderCount[0]--;
-  else encoderCount[0]++;
-}
+volatile long encoderCount[4] = {0, 0, 0, 0}; //num of Encoder
+float currentRPM[4] = {0.0, 0.0, 0.0, 0.0};   //Encoder RPM Reading
+float targetRPM[4] = {0.0, 0.0, 0.0, 0.0};    //Target RPM as reference for PID
+float error[4] = {0.0, 0.0, 0.0, 0.0};        //PID - Proportional
+float lastError[4] = {0.0, 0.0, 0.0, 0.0};    //PID - Derivative
+float integral[4] = {0.0, 0.0, 0.0, 0.0};     //PID - Integral
+float Kp = 0.45, Ki = 0.8, Kd = 0.01;         //PID Times Factor
+int motorPWM[4] = {0, 0, 0, 0};               //Amount of PWM sent to driver
+unsigned long lastTime[4] = {0, 0, 0, 0};     //store millis for calculation Interval
+unsigned long lastDebugTime = 0;              //store millis for Debug Interval
 
-void readEncoder_FR() {
-  if (digitalRead(ENCB_FR)) encoderCount[1]--;
-  else encoderCount[1]++;
-}
-
-void readEncoder_RL() {
-  if (digitalRead(ENCB_RL)) encoderCount[2]--;
-  else encoderCount[2]++;
-}
-
-void readEncoder_RR() {
-  if (digitalRead(ENCB_RR)) encoderCount[3]--;
-  else encoderCount[3]++;
-}
 
 void setup() {
   pinMode(MOTOR_A_FL, OUTPUT);
@@ -102,13 +114,13 @@ void loop() {
   if (millis() - lastDebugTime >= debugInterval) {
     lastDebugTime = millis();
     for (int i = 0; i < 4; i++) {
-      Serial.print("Motor ");
+      Serial.print("M ");
       Serial.print(i);
-      Serial.print(" | Target RPM: ");
+      Serial.print(" | Target: ");
       Serial.print(targetRPM[i]);
-      Serial.print(" | Current RPM: ");
+      Serial.print(" | Cur: ");
       Serial.print(currentRPM[i]);
-      Serial.print(" | Error: ");
+      Serial.print(" | Err: ");
       Serial.print(error[i]);
       Serial.print(" | PWM: ");
       Serial.println(motorPWM[i]);
@@ -117,6 +129,8 @@ void loop() {
   }
 }
 
+
+//===================================PID Feedback Calculation=====================================//
 void drivePID(int motorIndex) {
   const int motorA[4] = {MOTOR_A_FL, MOTOR_A_FR, MOTOR_A_RL, MOTOR_A_RR};
   const int motorB[4] = {MOTOR_B_FL, MOTOR_B_FR, MOTOR_B_RL, MOTOR_B_RR};
@@ -138,17 +152,40 @@ void drivePID(int motorIndex) {
     motorPWM[motorIndex] = Kp * error[motorIndex] + Ki * integral[motorIndex] + Kd * derivative;
 
     if (motorPWM[motorIndex] > 0) {
-      motorPWM[motorIndex] = constrain(motorPWM[motorIndex], 0, 50);
+      motorPWM[motorIndex] = constrain(motorPWM[motorIndex], 0, maxPWM);
       analogWrite(motorPWM_Pin[motorIndex], motorPWM[motorIndex]);
       digitalWrite(motorA[motorIndex], HIGH);
       digitalWrite(motorB[motorIndex], LOW);
     } else {
-      motorPWM[motorIndex] = constrain(abs(motorPWM[motorIndex]), 0, 50);
+      motorPWM[motorIndex] = constrain(abs(motorPWM[motorIndex]), 0, maxPWM);
       analogWrite(motorPWM_Pin[motorIndex], motorPWM[motorIndex]);
       digitalWrite(motorA[motorIndex], LOW);
       digitalWrite(motorB[motorIndex], HIGH);
     }
   }
+
+  
+//==================================== ENCODER ISR FUNCTIONS =====================================//
+void readEncoder_FL() {
+  if (digitalRead(ENCB_FL)) encoderCount[0]++;
+  else encoderCount[0]--;
+}
+
+void readEncoder_FR() {
+  if (digitalRead(ENCB_FR)) encoderCount[1]--;
+  else encoderCount[1]++;
+}
+
+void readEncoder_RL() {
+  if (digitalRead(ENCB_RL)) encoderCount[2]++;
+  else encoderCount[2]--;
+}
+
+void readEncoder_RR() {
+  if (digitalRead(ENCB_RR)) encoderCount[3]--;
+  else encoderCount[3]++;
+}
+
 
 //  unsigned long computationTime = micros() - startTime;
 //  Serial.print("Motor ");

@@ -1,39 +1,55 @@
-// Motor Driver Pins
+/*---------------------------------------------------------------------------------------------------------*/
+/*--------------------ARDUINO MEGA PG45 MOTOR WITH PID CONTROLLER CLOSED LOOP FEEDBACK---------------------*/
+/*------------------------7PPR ENCODER @1:19.2 GEAR RATIO -- BTS7960 MOTOR DRIVER--------------------------*/
+/*---------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------Source Code by LEXARGA-24 TEAM-------------------------------------*/
+/*-----------------------------------Modified & Adapted by LEXARGA-24 TEAM---------------------------------*/
+/*----------------------------------------------------V2.0-------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------*/
+/*------------------------------------LAST UPDATE AT 17:20:00, 14 JAN 25-----------------------------------*/
+
+// Define DEBUG to enable debugging; comment it out to disable
+//#define DEBUG
+
+#ifdef DEBUG
+  #define DEBUG_PRINT(...) Serial.print(__VA_ARGS__)
+  #define DEBUG_PRINTLN(...) Serial.println(__VA_ARGS__)
+  #define DEBUG_BEGIN(baud) Serial.begin(baud)
+#else
+  #define DEBUG_PRINT(...)    
+  #define DEBUG_PRINTLN(...)  
+  #define DEBUG_BEGIN(baud)   
+#endif
+
+//======================================= MOTOR DRIVER PINS =======================================//
 #define MOTOR_A 49
 #define MOTOR_B 47
 #define MOTOR_PWM 6
-#define MOTOR_PWM2 7
 
-// Encoder Pins
+
+//========================================= ENCODER PINS =========================================//
 #define ENCA 18
 #define ENCB 22
 
-// Constants
-float targetRPM = 100.0; 
-const int encoderPPR = 326;  
-const unsigned long sampleTime = 50; 
 
-// Variables
-volatile long encoderCount = 0;
-float currentRPM = 0.0;       
-float error = 0.0;              
-float lastError = 0.0;        
-float integral = 0.0;          
-float Kp = 0.45, Ki = 0.8, Kd = 0.01; 
-int motorPWM = 0;               
-unsigned long lastTime = 0;
+//================================== PID CALCULATION VARIABLES ===================================//
+float targetRPM = 100.0;              //Target RPM as reference for PID
+const int encoderPPR = 326;           //PG45 = 17PPR @1:19.2 Ratio = 17x19.2 ~ 326
+const unsigned long sampleTime = 50;  //PID Calculation Interval
 
-unsigned long waktuNaik=0;
-float target[5] = {50.0, 100.0, 30.0, 80.0, 150.0};
-int ind = 0;
+volatile long encoderCount = 0;       //Encoder pulse reading
+float currentRPM = 0.0;               //Encoder RPM Reading
+float error = 0.0;                    //PID - Proportional
+float lastError = 0.0;                //PID - Derivative
+float integral = 0.0;                 //PID - Integral
+float Kp = 0.45, Ki = 0.8, Kd = 0.01; //PID tuning Times Factor
+int motorPWM = 0;                     //Amount of PWM sent to driver
+unsigned long lastTime = 0;           //store millis for calculation Interval
 
-void readEncoder() {
-  if (digitalRead(ENCB)) {
-    encoderCount--;
-  } else {
-    encoderCount++;
-  }
-}
+unsigned long waktuNaik=0;                          //store millis for speed change
+float target[5] = {50.0, 100.0, 30.0, 80.0, 150.0}; //speed value to be calculated
+int ind = 0;                                        //speed array index
+
 
 void setup() {
   pinMode(MOTOR_A, OUTPUT);
@@ -45,24 +61,24 @@ void setup() {
   
   attachInterrupt(digitalPinToInterrupt(ENCA), readEncoder, RISING);
 
-  Serial.begin(115200);
+  DEBUG_BEGIN(115200);
 }
 
 void loop() {
-
   if(millis() - waktuNaik >= 5000){
     ind++;
     if(ind > 4){
       ind = 0;
     }
-    Serial.println(ind);
+    DEBUG_PRINTLN(ind);
     waktuNaik=millis();
   }
-
   targetRPM = target[ind];
   drivePID();
 }
 
+
+//===================================PID Feedback Calculation=====================================//
 void drivePID(){
   if (millis() - lastTime >= sampleTime) {
     lastTime = millis();
@@ -91,12 +107,20 @@ void drivePID(){
       digitalWrite(MOTOR_B, LOW);
     }
 
-    // Debugging output
-    Serial.print("Target RPM: ");
-    Serial.print(targetRPM);
-    Serial.print(" | Current RPM: ");
-    Serial.print(currentRPM);
-    Serial.print(" | PWM: ");
-    Serial.println(motorPWM);
+    DEBUG_PRINT("Target RPM: ");
+    DEBUG_PRINT(targetRPM);
+    DEBUG_PRINT(" | Current RPM: ");
+    DEBUG_PRINT(currentRPM);
+    DEBUG_PRINT(" | PWM: ");
+    DEBUG_PRINTLN(motorPWM);
+  }
+}
+
+
+void readEncoder() {
+  if (digitalRead(ENCB)) {
+    encoderCount--;
+  } else {
+    encoderCount++;
   }
 }
