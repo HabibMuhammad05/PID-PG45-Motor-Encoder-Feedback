@@ -1,8 +1,9 @@
+Last Updated: 11/05/25
 
 github Percobaan motor PG45 dengan internal encoder +PID controller
 https://github.com/HabibMuhammad05/PID-PG45-Motor-Encoder-Feedback
 
-Deskripsi tiap sketch program:
+Penjelasan tiap sketch program:
 
 - Motor_With_Encoder  : Pembacaan A&B Internal Encoder, Output pulse untuk kontrol Motor.
 	https://github.com/HabibMuhammad05/PID-PG45-Motor-Encoder-Feedback/tree/master/Motor_With_Encoder
