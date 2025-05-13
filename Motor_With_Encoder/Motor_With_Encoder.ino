@@ -1,15 +1,15 @@
 /*---------------------------------------------------------------------------------------------------------*/
 /*-----------------------ARDUINO MEGA PG45 MOTOR WITH INTERNAL ENCODER AS FEEDBACK-------------------------*/
-/*------------------------7PPR ENCODER @1:19.2 GEAR RATIO -- BTS7960 MOTOR DRIVER---------------------------*/
+/*------------------------7PPR ENCODER @1:19.2 GEAR RATIO -- BTS7960 MOTOR DRIVER--------------------------*/
 /*---------------------------------------------------------------------------------------------------------*/
 /*--------------------------------------Source Code by LEXARGA-24 TEAM-------------------------------------*/
 /*-----------------------------------Modified & Adapted by LEXARGA-24 TEAM---------------------------------*/
-/*----------------------------------------------------V1.0-------------------------------------------------*/
+/*----------------------------------------------------V1.1-------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------*/
-/*------------------------------------LAST UPDATE AT 17:06:00, 14 JAN 25-----------------------------------*/
+/*------------------------------------LAST UPDATE AT 11:50:00, 27 MAY 25-----------------------------------*/
 
 // Define DEBUG to enable debugging; comment it out to disable
-//#define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
   #define DEBUG_PRINT(...) Serial.print(__VA_ARGS__)
@@ -23,14 +23,14 @@
 
 
 //========================================= ENCODER PINS =========================================//
-uint8_t ENCA_FL = 21;
-uint8_t ENCB_FL = 28;
-uint8_t ENCA_FR = 20;
-uint8_t ENCB_FR = 26;
-uint8_t ENCA_RL = 3;
-uint8_t ENCB_RL = 24;
-uint8_t ENCA_RR = 2;
-uint8_t ENCB_RR = 22;
+uint8_t ENCA_FL = 20;
+uint8_t ENCB_FL = 22;
+uint8_t ENCA_FR = 21;
+uint8_t ENCB_FR = 24;
+uint8_t ENCA_RL = 2;
+uint8_t ENCB_RL = 26;
+uint8_t ENCA_RR = 3;
+uint8_t ENCB_RR = 28;
 
 int encoderCount[4] = {0};
 
@@ -38,22 +38,22 @@ int encoderCount[4] = {0};
 //idc 1 connector, FRONT LEFT
 uint8_t FL_A = 49;
 uint8_t FL_B = 47;
-uint8_t pwm1 = 8;
+uint8_t pwm1 = 4;
 
 //idc 2 connector, FRONT RIGHT
 uint8_t FR_A = 43;
 uint8_t FR_B = 45;
-uint8_t pwm2 = 9;
+uint8_t pwm2 = 5;
 
 //idc 3 connector, REAR LEFT
 uint8_t RL_A = 41;
 uint8_t RL_B = 39;
-uint8_t pwm3 = 4;
+uint8_t pwm3 = 6;
 
 //idc 4 connector, REAR RIGHT
 uint8_t RR_A = 35;
 uint8_t RR_B = 37;
-uint8_t pwm4 = 5;
+uint8_t pwm4 = 7;
 
 void setup() {
   DEBUG_BEGIN(115200);
@@ -86,21 +86,35 @@ void setup() {
 }
 
 void loop() {
-//  int a = digitalRead(ENCA);
-//  int b = digitalRead(ENCB);
-//  DEBUG_PRINT(a*5); 
+//  bool a = digitalRead(ENCA);
+//  bool b = digitalRead(ENCB);
+//  DEBUG_PRINT(a); 
 //  DEBUG_PRINT(" ");
-//  DEBUG_PRINT(b*5);
+//  DEBUG_PRINT(b);
 //  DEBUG_PRINTLN();
 
-  if(encoderCount[3] < 800){
-    
+//  if(encoderCount[3] < 800){
+//    
+//    analogWrite(pwm4, 30);
+//    digitalWrite(RR_A, HIGH);
+//    digitalWrite(RR_B, LOW);
+//  }else{
+//    analogWrite(pwm4, 0);
+//  }
+
+    analogWrite(pwm1, 30);
+    analogWrite(pwm2, 30);
+    analogWrite(pwm3, 30);
     analogWrite(pwm4, 30);
-    digitalWrite(RR_A, HIGH);
-    digitalWrite(RR_B, LOW);
-  }else{
-    analogWrite(pwm4, 0);
-  }
+    
+    digitalWrite(FL_B, HIGH);
+    digitalWrite(FL_A, LOW);
+//    digitalWrite(FR_B, HIGH);
+//    digitalWrite(FR_A, LOW);
+//    digitalWrite(RL_B, HIGH);
+//    digitalWrite(RL_A, LOW);
+//    digitalWrite(RR_B, HIGH);
+//    digitalWrite(RR_A, LOW);
 
   DEBUG_PRINT(encoderCount[0]);  DEBUG_PRINT(" | ");
   DEBUG_PRINT(encoderCount[1]);  DEBUG_PRINT(" | ");
